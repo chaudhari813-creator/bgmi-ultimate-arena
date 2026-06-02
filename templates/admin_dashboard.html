@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<section class="py-12 bg-primary-dark min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
+            <div>
+                <h2 class="text-accent-blue font-semibold tracking-widest uppercase mb-2">Management</h2>
+                <h3 class="font-display text-3xl md:text-4xl text-white">ADMIN PANEL</h3>
+            </div>
+            <a href="{{ url_for('admin_logout') }}" class="px-6 py-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl hover:bg-red-500/20 transition-colors">
+                Logout
+            </a>
+        </div>
+
+        <!-- Global Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+            <div class="bg-secondary-dark p-6 rounded-2xl border border-white/5">
+                <p class="text-gray-500 text-sm mb-2">Total Registrations</p>
+                <p class="text-3xl font-bold text-white">{{ stats.total or 0 }}</p>
+            </div>
+            <div class="bg-secondary-dark p-6 rounded-2xl border border-white/5">
+                <p class="text-gray-500 text-sm mb-2">Approved</p>
+                <p class="text-3xl font-bold text-green-400">{{ stats.approved or 0 }}</p>
+            </div>
+            <div class="bg-secondary-dark p-6 rounded-2xl border border-white/5">
+                <p class="text-gray-500 text-sm mb-2">Rejected</p>
+                <p class="text-3xl font-bold text-red-400">{{ stats.rejected or 0 }}</p>
+            </div>
+            <div class="bg-secondary-dark p-6 rounded-2xl border border-white/5">
+                <p class="text-gray-500 text-sm mb-2">Pending</p>
+                <p class="text-3xl font-bold text-yellow-400">{{ stats.pending or 0 }}</p>
+            </div>
+        </div>
+
+        <!-- Create Tournament -->
+        <div class="bg-secondary-dark rounded-2xl p-8 border border-white/5 mb-12">
+            <h4 class="text-xl font-bold text-white mb-6">Create New Tournament</h4>
+            <form action="{{ url_for('create_tournament') }}" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Tournament Name *</label>
+                    <input type="text" name="name" placeholder="e.g., BGMI Arena Showdown S1" class="w-full px-4 py-3 rounded-xl form-input" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Game Mode *</label>
+                    <input type="text" name="game_mode" placeholder="e.g., TDM 4v4 / Battle Royale" class="w-full px-4 py-3 rounded-xl form-input" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Entry Fee (₹) *</label>
+                    <input type="text" name="entry_fee" placeholder="e.g., 100" class="w-full px-4 py-3 rounded-xl form-input" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Prize Pool (₹) *</label>
+                    <input type="text" name="prize_pool" placeholder="e.g., 500" class="w-full px-4 py-3 rounded-xl form-input" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Max Teams</label>
+                    <input type="number" name="max_teams" placeholder="16" value="16" class="w-full px-4 py-3 rounded-xl form-input">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">UPI ID (for payments)</label>
+                    <input type="text" name="upi_id" placeholder="e.g., yourname@upi" class="w-full px-4 py-3 rounded-xl form-input">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Registration Deadline</label>
+                    <input type="datetime-local" name="registration_deadline" class="w-full px-4 py-3 rounded-xl form-input">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Description</label>
+                    <input type="text" name="description" placeholder="Short description" class="w-full px-4 py-3 rounded-xl form-input">
+                </div>
+                <div class="md:col-span-2">
+                    <button type="submit" class="px-8 py-3 bg-accent-blue text-white font-bold rounded-xl hover:scale-105 transition-all">
+                        Create Tournament
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Tournament List -->
+        <h4 class="text-xl font-bold text-white mb-6">All Tournaments</h4>
+        {% if tournaments %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for t in tournaments %}
+            <div class="admin-card">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h5 class="text-lg font-bold text-white">{{ t.name }}</h5>
+                        <p class="text-gray-500 text-xs">{{ t.game_mode }} | ₹{{ t.entry_fee }} entry</p>
+                    </div>
+                    <span class="px-2 py-1 rounded text-xs font-semibold {% if t.status == 'active' %}bg-green-500/10 text-green-400{% else %}bg-gray-500/10 text-gray-400{% endif %}">
+                        {{ t.status|upper }}
+                    </span>
+                </div>
+                <div class="flex gap-2 mt-4">
+                    <a href="{{ url_for('admin_tournament_detail', tournament_id=t.id) }}" class="flex-1 text-center px-3 py-2 bg-accent-blue/10 border border-accent-blue/30 text-accent-blue rounded-lg hover:bg-accent-blue/20 transition-colors text-sm font-semibold">
+                        View
+                    </a>
+                    {% if t.status == 'active' %}
+                    <form action="{{ url_for('complete_tournament', tournament_id=t.id) }}" method="POST" class="flex-1">
+                        <button type="submit" class="w-full px-3 py-2 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 rounded-lg hover:bg-yellow-500/20 transition-colors text-sm font-semibold">
+                            Complete
+                        </button>
+                    </form>
+                    {% endif %}
+                    <form action="{{ url_for('delete_tournament', tournament_id=t.id) }}" method="POST" class="flex-1" onsubmit="return confirm('Delete this tournament and all its registrations?')">
+                        <button type="submit" class="w-full px-3 py-2 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors text-sm font-semibold">
+                            Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="bg-secondary-dark rounded-2xl p-12 border border-white/5 text-center">
+            <p class="text-gray-500">No tournaments created yet. Create one above!</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

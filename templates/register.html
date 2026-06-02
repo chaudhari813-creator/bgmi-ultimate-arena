@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}Register - {{ tournament.name }}{% endblock %}
+
+{% block content %}
+<section class="py-24 bg-primary-dark min-h-screen">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-gradient-to-br from-slate-gray to-secondary-dark rounded-[2rem] p-8 md:p-12 border border-white/10 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-accent-blue/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
+            <div class="absolute bottom-0 left-0 w-64 h-64 bg-accent-gold/5 rounded-full blur-3xl -ml-32 -mb-32"></div>
+
+            <div class="relative z-10">
+                <!-- Tournament Info -->
+                <div class="text-center mb-8">
+                    <h2 class="font-display text-3xl md:text-4xl text-white mb-2">{{ tournament.name }}</h2>
+                    <p class="text-gray-400">{{ tournament.description or '' }}</p>
+                    <div class="flex flex-wrap justify-center gap-4 mt-4">
+                        <span class="px-4 py-2 bg-accent-blue/10 border border-accent-blue/30 text-accent-blue rounded-xl text-sm font-semibold">{{ tournament.game_mode }}</span>
+                        <span class="px-4 py-2 bg-accent-gold/10 border border-accent-gold/30 text-accent-gold rounded-xl text-sm font-semibold">Entry: ₹{{ tournament.entry_fee }}</span>
+                        <span class="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl text-sm font-semibold">Prize: ₹{{ tournament.prize_pool }}</span>
+                    </div>
+                </div>
+
+                {% if tournament.upi_id %}
+                <!-- Payment Info -->
+                <div class="bg-black/40 rounded-2xl border border-accent-gold/20 p-6 mb-8 text-center">
+                    <p class="text-accent-gold font-semibold mb-2">Pay Entry Fee via UPI</p>
+                    <p class="text-2xl text-white font-mono">{{ tournament.upi_id }}</p>
+                    <p class="text-gray-500 text-sm mt-2">Pay ₹{{ tournament.entry_fee }} and upload the screenshot below</p>
+                </div>
+                {% endif %}
+
+                <!-- Registration Form -->
+                <form action="{{ url_for('register', tournament_id=tournament.id) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-3">Team Name</label>
+                        <input type="text" name="team_name" placeholder="Enter your squad name" class="w-full px-4 py-3 rounded-xl form-input" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-3">Player In-Game Names (IGNs)</label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input type="text" name="player1" placeholder="Player 1 IGN (Leader)" class="px-4 py-3 rounded-xl form-input" required>
+                            <input type="text" name="player2" placeholder="Player 2 IGN" class="px-4 py-3 rounded-xl form-input" required>
+                            <input type="text" name="player3" placeholder="Player 3 IGN" class="px-4 py-3 rounded-xl form-input" required>
+                            <input type="text" name="player4" placeholder="Player 4 IGN" class="px-4 py-3 rounded-xl form-input" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-3">Squad Leader Contact Number</label>
+                        <input type="tel" name="contact" placeholder="Enter 10-digit mobile number" class="w-full px-4 py-3 rounded-xl form-input" pattern="[0-9]{10}" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-3">Payment Screenshot</label>
+                        <div class="file-input-label" onclick="document.getElementById('fileInput').click()">
+                            <svg class="w-5 h-5 text-accent-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            <span id="uploadText">Click to upload payment screenshot (JPG, PNG)</span>
+                        </div>
+                        <input type="file" id="fileInput" name="payment_screenshot" accept="image/*" class="hidden" onchange="previewFile(this)" required>
+                        <div id="previewContainer" class="mt-4 hidden">
+                            <img id="previewImg" src="" alt="Preview" class="image-preview">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full group relative px-6 py-4 bg-accent-blue text-white font-bold rounded-2xl overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 shadow-[0_0_30px_-5px_rgba(0,180,216,0.5)]">
+                        <span class="relative z-10 text-lg">REGISTER SQUAD</span>
+                        <div class="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-12"></div>
+                    </button>
+                </form>
+
+                <div class="mt-8 flex flex-col md:flex-row items-center justify-center gap-6 text-sm text-gray-500">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-accent-blue" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                        Secure Payment
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-accent-blue" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                        Instant Confirmation
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function previewFile(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('previewImg').src = e.target.result;
+            document.getElementById('previewContainer').classList.remove('hidden');
+            document.getElementById('uploadText').textContent = input.files[0].name;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+{% endblock %}
