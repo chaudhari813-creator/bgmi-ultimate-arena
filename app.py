@@ -54,12 +54,40 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (tournament_id) REFERENCES tournaments(id)
         );
+
+        CREATE TABLE IF NOT EXISTS live_matches (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tournament_id INTEGER,
+            title TEXT NOT NULL,
+            description TEXT,
+            stream_url TEXT NOT NULL,
+            stream_type TEXT DEFAULT 'youtube',
+            status TEXT DEFAULT 'live',
+            scheduled_time TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (tournament_id) REFERENCES tournaments(id)
+        );
     ''')
     db.commit()
     db.close()
 
 def generate_reg_id():
     return 'REG-' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+def get_youtube_embed_url(url):
+    """Convert YouTube URL to embed URL"""
+    if 'youtube.com/watch?v=' in url:
+        video_id = url.split('v=')[1].split('&')[0]
+        return f'https://www.youtube.com/embed/{video_id}?autoplay=1'
+    elif 'youtu.be/' in url:
+        video_id = url.split('youtu.be/')[1].split('?')[0]
+        return f'https://www.youtube.com/embed/{video_id}?autoplay=1'
+    elif 'youtube.com/live/' in url:
+        video_id = url.split('live/')[1].split('?')[0]
+        return f'https://www.youtube.com/embed/{video_id}?autoplay=1'
+    elif 'youtube.com/embed/' in url:
+        return url
+    return url
 
 # Routes
 @app.route('/')
@@ -71,8 +99,40 @@ def index():
     past_tournaments = db.execute(
         'SELECT * FROM tournaments WHERE status = "completed" ORDER BY created_at DESC'
     ).fetchall()
+    live_matches = db.execute(
+        'SELECT lm.*, t.name as tournament_name FROM live_matches lm LEFT JOIN tournaments t ON lm.tournament_id = t.id WHERE lm.status = "live" ORDER BY lm.created_at DESC'
+    ).fetchall()
     db.close()
-    return render_template('index.html', active_tournaments=active_tournaments, past_tournaments=past_tournaments)
+    return render_template('index.html', active_tournaments=active_tournaments, past_tournaments=past_tournaments, live_matches=live_matches)
+
+@app.route('/live')
+def live_page():
+    db = get_db()
+    live_matches = db.execute(
+        'SELECT lm.*, t.name as tournament_name FROM live_matches lm LEFT JOIN tournaments t ON lm.tournament_id = t.id WHERE lm.status = "live" ORDER BY lm.created_at DESC'
+    ).fetchall()
+    upcoming_matches = db.execute(
+        'SELECT lm.*, t.name as tournament_name FROM live_matches lm LEFT JOIN tournaments t ON lm.tournament_id = t.id WHERE lm.status = "upcoming" ORDER BY lm.scheduled_time ASC'
+    ).fetchall()
+    past_matches = db.execute(
+        'SELECT lm.*, t.name as tournament_name FROM live_matches lm LEFT JOIN tournaments t ON lm.tournament_id = t.id WHERE lm.status = "ended" ORDER BY lm.created_at DESC LIMIT 10'
+    ).fetchall()
+    db.close()
+    return render_template('live.html', live_matches=live_matches, upcoming_matches=upcoming_matches, past_matches=past_matches)
+
+@app.route('/live/<int:match_id>')
+def watch_live(match_id):
+    db = get_db()
+    match = db.execute(
+        'SELECT lm.*, t.name as tournament_name FROM live_matches lm LEFT JOIN tournaments t ON lm.tournament_id = t.id WHERE lm.id = ?',
+        (match_id,)
+    ).fetchone()
+    db.close()
+    if not match:
+        flash('Match not found', 'error')
+        return redirect(url_for('live_page'))
+    embed_url = get_youtube_embed_url(match['stream_url'])
+    return render_template('watch.html', match=match, embed_url=embed_url)
 
 @app.route('/register/<int:tournament_id>', methods=['GET', 'POST'])
 def register(tournament_id):
@@ -155,8 +215,11 @@ def admin_dashboard():
             SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending
         FROM registrations
     ''').fetchone()
+    live_matches = db.execute(
+        'SELECT lm.*, t.name as tournament_name FROM live_matches lm LEFT JOIN tournaments t ON lm.tournament_id = t.id ORDER BY lm.created_at DESC'
+    ).fetchall()
     db.close()
-    return render_template('admin_dashboard.html', tournaments=tournaments, stats=stats)
+    return render_template('admin_dashboard.html', tournaments=tournaments, stats=stats, live_matches=live_matches)
 
 @app.route('/admin/tournament/create', methods=['POST'])
 def create_tournament():
@@ -188,6 +251,7 @@ def delete_tournament(tournament_id):
         return redirect(url_for('admin_login'))
     db = get_db()
     db.execute('DELETE FROM registrations WHERE tournament_id = ?', (tournament_id,))
+    db.execute('DELETE FROM live_matches WHERE tournament_id = ?', (tournament_id,))
     db.execute('DELETE FROM tournaments WHERE id = ?', (tournament_id,))
     db.commit()
     db.close()
@@ -258,6 +322,66 @@ def reset_registration(reg_id):
     db.commit()
     db.close()
     return redirect(url_for('admin_tournament_detail', tournament_id=reg['tournament_id']))
+
+# Live Match Admin Routes
+@app.route('/admin/live/create', methods=['POST'])
+def create_live_match():
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+    
+    title = request.form.get('title')
+    description = request.form.get('description')
+    stream_url = request.form.get('stream_url')
+    stream_type = request.form.get('stream_type', 'youtube')
+    tournament_id = request.form.get('tournament_id')
+    status = request.form.get('status', 'live')
+    scheduled_time = request.form.get('scheduled_time')
+
+    if tournament_id == '' or tournament_id == 'none':
+        tournament_id = None
+
+    db = get_db()
+    db.execute(
+        'INSERT INTO live_matches (tournament_id, title, description, stream_url, stream_type, status, scheduled_time) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        (tournament_id, title, description, stream_url, stream_type, status, scheduled_time)
+    )
+    db.commit()
+    db.close()
+    flash('Live match created successfully!', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/live/<int:match_id>/delete', methods=['POST'])
+def delete_live_match(match_id):
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+    db = get_db()
+    db.execute('DELETE FROM live_matches WHERE id = ?', (match_id,))
+    db.commit()
+    db.close()
+    flash('Live match removed!', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/live/<int:match_id>/end', methods=['POST'])
+def end_live_match(match_id):
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+    db = get_db()
+    db.execute('UPDATE live_matches SET status = "ended" WHERE id = ?', (match_id,))
+    db.commit()
+    db.close()
+    flash('Match ended!', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/live/<int:match_id>/golive', methods=['POST'])
+def golive_match(match_id):
+    if not session.get('admin'):
+        return redirect(url_for('admin_login'))
+    db = get_db()
+    db.execute('UPDATE live_matches SET status = "live" WHERE id = ?', (match_id,))
+    db.commit()
+    db.close()
+    flash('Match is now LIVE!', 'success')
+    return redirect(url_for('admin_dashboard'))
 
 if __name__ == '__main__':
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)

@@ -32,6 +32,37 @@
     </div>
 </section>
 
+<!-- Live Matches Banner -->
+{% if live_matches %}
+<section class="py-12 bg-gradient-to-b from-red-900/10 to-primary-dark border-b border-red-500/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                <span class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
+                Live Now
+            </h3>
+            <a href="{{ url_for('live_page') }}" class="text-accent-blue hover:underline text-sm">View All &rarr;</a>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for match in live_matches %}
+            <a href="{{ url_for('watch_live', match_id=match.id) }}" class="bg-secondary-dark p-5 rounded-2xl border border-red-500/20 hover:border-red-500/50 transition-all group block">
+                <div class="flex justify-between items-start mb-3">
+                    <h5 class="text-lg font-bold text-white group-hover:text-red-400 transition-colors">{{ match.title }}</h5>
+                    <span class="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-bold flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>LIVE
+                    </span>
+                </div>
+                <p class="text-gray-500 text-sm">{{ match.description or 'Click to watch' }}</p>
+                {% if match.tournament_name %}
+                <p class="text-accent-blue text-xs mt-2">{{ match.tournament_name }}</p>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
 <!-- Active Tournaments Section -->
 <section id="tournaments" class="py-24 bg-primary-dark">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

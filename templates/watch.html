@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}{{ match.title }} - Live{% endblock %}
+
+{% block content %}
+<section class="py-24 bg-primary-dark min-h-screen">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Back Link -->
+        <a href="{{ url_for('live_page') }}" class="text-accent-blue hover:underline text-sm mb-6 inline-block">&larr; Back to Live Matches</a>
+
+        <!-- Match Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div>
+                <h2 class="font-display text-2xl md:text-3xl text-white">{{ match.title }}</h2>
+                {% if match.tournament_name %}
+                <p class="text-accent-blue text-sm mt-1">{{ match.tournament_name }}</p>
+                {% endif %}
+                {% if match.description %}
+                <p class="text-gray-400 text-sm mt-1">{{ match.description }}</p>
+                {% endif %}
+            </div>
+            {% if match.status == 'live' %}
+            <span class="px-4 py-2 bg-red-500/20 border border-red-500/50 text-red-400 rounded-xl text-sm font-bold flex items-center gap-2">
+                <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                LIVE NOW
+            </span>
+            {% elif match.status == 'ended' %}
+            <span class="px-4 py-2 bg-gray-500/20 border border-gray-500/30 text-gray-400 rounded-xl text-sm font-bold">
+                MATCH ENDED
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- Video Player -->
+        <div class="relative w-full rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black" style="padding-top: 56.25%;">
+            <iframe 
+                src="{{ embed_url }}" 
+                class="absolute inset-0 w-full h-full"
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                allowfullscreen>
+            </iframe>
+        </div>
+
+        <!-- Match Info -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-secondary-dark p-4 rounded-xl border border-white/5 text-center">
+                <p class="text-gray-500 text-xs mb-1">Stream Type</p>
+                <p class="text-white font-semibold capitalize">{{ match.stream_type }}</p>
+            </div>
+            <div class="bg-secondary-dark p-4 rounded-xl border border-white/5 text-center">
+                <p class="text-gray-500 text-xs mb-1">Status</p>
+                <p class="font-semibold {% if match.status == 'live' %}text-red-400{% else %}text-gray-400{% endif %} capitalize">{{ match.status }}</p>
+            </div>
+            <div class="bg-secondary-dark p-4 rounded-xl border border-white/5 text-center">
+                <p class="text-gray-500 text-xs mb-1">Watch on YouTube</p>
+                <a href="{{ match.stream_url }}" target="_blank" class="text-accent-blue hover:underline font-semibold">Open in YouTube</a>
+            </div>
+        </div>
+
+        <!-- Share Section -->
+        <div class="mt-8 bg-secondary-dark p-6 rounded-2xl border border-white/5">
+            <h4 class="text-white font-semibold mb-4">Share this match</h4>
+            <div class="flex gap-3">
+                <a href="https://wa.me/?text=Watch%20BGMI%20match%20LIVE:%20{{ match.title }}%20-%20{{ match.stream_url }}" target="_blank" class="px-4 py-2 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg hover:bg-green-500/20 transition-colors text-sm font-semibold">
+                    Share on WhatsApp
+                </a>
+                <button onclick="navigator.clipboard.writeText('{{ match.stream_url }}'); this.textContent='Copied!'" class="px-4 py-2 bg-accent-blue/10 border border-accent-blue/30 text-accent-blue rounded-lg hover:bg-accent-blue/20 transition-colors text-sm font-semibold">
+                    Copy Link
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
