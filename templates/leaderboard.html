@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}Leaderboard - BGMI Ultimate Arena{% endblock %}
+
+{% block content %}
+<section class="py-24 bg-primary-dark min-h-screen">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h2 class="text-accent-gold font-semibold tracking-widest uppercase mb-4">Rankings</h2>
+            <h3 class="font-display text-4xl md:text-5xl text-white">LEADERBOARD</h3>
+        </div>
+
+        <!-- Tournament Selector -->
+        <div class="bg-secondary-dark rounded-2xl p-6 border border-white/5 mb-8">
+            <form method="GET" class="flex flex-col md:flex-row gap-4 items-end">
+                <div class="flex-1">
+                    <label class="block text-sm text-gray-400 mb-2">Select Tournament</label>
+                    <select name="tournament_id" class="w-full px-4 py-3 rounded-xl form-input">
+                        <option value="">-- Choose Tournament --</option>
+                        {% for t in tournaments %}
+                        <option value="{{ t.id }}" {% if tournament_id == t.id %}selected{% endif %}>{{ t.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="px-6 py-3 bg-accent-blue text-white font-bold rounded-xl hover:scale-105 transition-all">View</button>
+            </form>
+        </div>
+
+        {% if selected_tournament %}
+        <div class="mb-6">
+            <h4 class="text-xl font-bold text-white">{{ selected_tournament.name }}</h4>
+            <p class="text-gray-500 text-sm">{{ selected_tournament.game_mode }} | Prize: ₹{{ selected_tournament.prize_pool }}</p>
+        </div>
+        {% endif %}
+
+        {% if entries %}
+        <div class="bg-secondary-dark rounded-2xl border border-white/5 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-white/5">
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase">#</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase">Team</th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-400 uppercase">W</th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-400 uppercase">L</th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-400 uppercase">Kills</th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-gray-400 uppercase">Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in entries %}
+                        <tr class="border-b border-white/5 hover:bg-white/5 transition-colors {% if loop.index <= 3 %}bg-accent-gold/5{% endif %}">
+                            <td class="px-6 py-4">
+                                {% if loop.index == 1 %}
+                                <span class="text-2xl">🥇</span>
+                                {% elif loop.index == 2 %}
+                                <span class="text-2xl">🥈</span>
+                                {% elif loop.index == 3 %}
+                                <span class="text-2xl">🥉</span>
+                                {% else %}
+                                <span class="text-gray-400 font-semibold">{{ loop.index }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4">
+                                <a href="{{ url_for('team_profile', team_id=entry.team_id) }}" class="text-white font-semibold hover:text-accent-blue transition-colors">{{ entry.team_name }}</a>
+                            </td>
+                            <td class="px-6 py-4 text-center text-green-400 font-semibold">{{ entry.wins }}</td>
+                            <td class="px-6 py-4 text-center text-red-400 font-semibold">{{ entry.losses }}</td>
+                            <td class="px-6 py-4 text-center text-white font-semibold">{{ entry.total_kills }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="px-3 py-1 bg-accent-gold/10 text-accent-gold rounded-full font-bold">{{ entry.points }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% elif tournament_id %}
+        <div class="bg-secondary-dark rounded-2xl p-12 border border-white/5 text-center">
+            <p class="text-gray-500">No leaderboard data yet. Brackets need to be generated first.</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

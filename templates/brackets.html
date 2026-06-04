@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Brackets - {{ tournament.name }}{% endblock %}
+
+{% block content %}
+<section class="py-24 bg-primary-dark min-h-screen">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <a href="{{ url_for('index') }}" class="text-accent-blue hover:underline text-sm mb-4 inline-block">&larr; Back</a>
+            <h2 class="text-accent-blue font-semibold tracking-widest uppercase mb-4">Tournament Brackets</h2>
+            <h3 class="font-display text-3xl md:text-4xl text-white">{{ tournament.name }}</h3>
+            <p class="text-gray-400 mt-2">{{ tournament.game_mode }} | Prize: ₹{{ tournament.prize_pool }}</p>
+        </div>
+
+        {% if rounds %}
+        {% for round_name, matches in rounds.items() %}
+        <div class="mb-12">
+            <h4 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                <span class="w-8 h-8 bg-accent-blue/10 border border-accent-blue/30 rounded-lg flex items-center justify-center text-accent-blue text-sm font-bold">{{ loop.index }}</span>
+                {{ round_name }}
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for match in matches %}
+                <div class="bg-secondary-dark rounded-xl border border-white/5 overflow-hidden {% if match.winner_id %}border-green-500/20{% endif %}">
+                    <div class="px-4 py-2 bg-white/5 border-b border-white/5 flex justify-between items-center">
+                        <span class="text-gray-500 text-xs font-semibold">Match {{ match.match_order }}</span>
+                        {% if match.winner_id %}
+                        <span class="text-green-400 text-xs font-semibold">Completed</span>
+                        {% else %}
+                        <span class="text-yellow-400 text-xs font-semibold">Pending</span>
+                        {% endif %}
+                    </div>
+                    <div class="p-4">
+                        <!-- Team 1 -->
+                        <div class="flex justify-between items-center p-3 rounded-lg mb-2 {% if match.winner_id == match.team1_id %}bg-green-500/10 border border-green-500/20{% else %}bg-white/5{% endif %}">
+                            <div class="flex items-center gap-2">
+                                {% if match.winner_id == match.team1_id %}
+                                <span class="text-green-400">👑</span>
+                                {% endif %}
+                                <a href="{{ url_for('team_profile', team_id=match.team1_id) }}" class="text-white font-semibold hover:text-accent-blue text-sm">{{ match.team1_name }}</a>
+                            </div>
+                            <span class="text-gray-400 text-sm font-mono">{{ match.team1_kills }}</span>
+                        </div>
+                        <div class="text-center text-gray-600 text-xs my-1">VS</div>
+                        <!-- Team 2 -->
+                        <div class="flex justify-between items-center p-3 rounded-lg {% if match.winner_id == match.team2_id %}bg-green-500/10 border border-green-500/20{% elif match.team2_name == 'BYE' %}bg-gray-500/5 opacity-50{% else %}bg-white/5{% endif %}">
+                            <div class="flex items-center gap-2">
+                                {% if match.winner_id == match.team2_id %}
+                                <span class="text-green-400">👑</span>
+                                {% endif %}
+                                {% if match.team2_id %}
+                                <a href="{{ url_for('team_profile', team_id=match.team2_id) }}" class="text-white font-semibold hover:text-accent-blue text-sm">{{ match.team2_name }}</a>
+                                {% else %}
+                                <span class="text-gray-500 text-sm">{{ match.team2_name }}</span>
+                                {% endif %}
+                            </div>
+                            <span class="text-gray-400 text-sm font-mono">{{ match.team2_kills }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="bg-secondary-dark rounded-2xl p-12 border border-white/5 text-center">
+            <p class="text-gray-500 text-xl">Brackets not generated yet.</p>
+            <p class="text-gray-600 mt-2">Admin will generate brackets once registrations are complete.</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

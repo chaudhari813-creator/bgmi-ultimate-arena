@@ -9,11 +9,22 @@
             <div>
                 <h2 class="text-accent-blue font-semibold tracking-widest uppercase mb-2">Management</h2>
                 <h3 class="font-display text-3xl md:text-4xl text-white">ADMIN PANEL</h3>
+                <p class="text-gray-500 text-sm mt-1">Logged in as: {{ session.get('admin_username', 'admin') }}</p>
             </div>
             <a href="{{ url_for('admin_logout') }}" class="px-6 py-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl hover:bg-red-500/20 transition-colors">
                 Logout
             </a>
         </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="mb-6 p-4 rounded-xl text-sm {% if category == 'error' %}bg-red-500/10 text-red-400 border border-red-500/20{% else %}bg-green-500/10 text-green-400 border border-green-500/20{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
 
         <!-- Global Stats -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
@@ -132,7 +143,6 @@
                 </div>
             </form>
 
-            <!-- Existing Live Matches -->
             {% if live_matches %}
             <h5 class="text-lg font-semibold text-white mb-4">Current Matches</h5>
             <div class="space-y-3">
@@ -166,12 +176,93 @@
             {% endif %}
         </div>
 
+        <!-- Gallery Upload -->
+        <div class="bg-secondary-dark rounded-2xl p-8 border border-accent-gold/10 mb-12">
+            <h4 class="text-xl font-bold text-white mb-6">Upload to Gallery</h4>
+            <form action="{{ url_for('upload_gallery') }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Title *</label>
+                    <input type="text" name="title" placeholder="e.g., Epic Clutch Moment" class="w-full px-4 py-3 rounded-xl form-input" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Description</label>
+                    <input type="text" name="description" placeholder="Brief description" class="w-full px-4 py-3 rounded-xl form-input">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Link to Tournament</label>
+                    <select name="tournament_id" class="w-full px-4 py-3 rounded-xl form-input">
+                        <option value="none">-- No Tournament --</option>
+                        {% for t in tournaments %}
+                        <option value="{{ t.id }}">{{ t.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Image/Video *</label>
+                    <input type="file" name="media" accept="image/*,video/mp4" class="w-full px-4 py-3 rounded-xl form-input" required>
+                </div>
+                <div class="md:col-span-2">
+                    <button type="submit" class="px-8 py-3 bg-accent-gold text-black font-bold rounded-xl hover:scale-105 transition-all">
+                        Upload to Gallery
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Sub-Admin Management (Super Admin Only) -->
+        {% if session.get('admin') %}
+        <div class="bg-secondary-dark rounded-2xl p-8 border border-purple-500/10 mb-12">
+            <h4 class="text-xl font-bold text-white mb-6">Manage Admins</h4>
+            <form action="{{ url_for('create_sub_admin') }}" method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Username *</label>
+                    <input type="text" name="username" placeholder="e.g., moderator1" class="w-full px-4 py-3 rounded-xl form-input" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Password *</label>
+                    <input type="text" name="password" placeholder="Set password" class="w-full px-4 py-3 rounded-xl form-input" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Role</label>
+                    <select name="role" class="w-full px-4 py-3 rounded-xl form-input">
+                        <option value="sub_admin">Sub Admin</option>
+                        <option value="super_admin">Super Admin</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="px-6 py-3 bg-purple-500 text-white font-bold rounded-xl hover:scale-105 transition-all">
+                        Add Admin
+                    </button>
+                </div>
+            </form>
+            {% if admins %}
+            <div class="space-y-3">
+                {% for admin in admins %}
+                <div class="flex justify-between items-center p-4 bg-black/30 rounded-xl border border-white/5">
+                    <div>
+                        <p class="text-white font-semibold">{{ admin.username }}</p>
+                        <p class="text-gray-500 text-xs">{{ admin.role | replace('_', ' ') | title }}</p>
+                    </div>
+                    {% if admin.role != 'super_admin' %}
+                    <form action="{{ url_for('delete_sub_admin', admin_id=admin.id) }}" method="POST" onsubmit="return confirm('Remove this admin?')">
+                        <button type="submit" class="px-3 py-1 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/20 text-xs font-semibold">Remove</button>
+                    </form>
+                    {% else %}
+                    <span class="px-3 py-1 bg-purple-500/10 text-purple-400 rounded-lg text-xs font-semibold">Protected</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
         <!-- Tournament List -->
         <h4 class="text-xl font-bold text-white mb-6">All Tournaments</h4>
         {% if tournaments %}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for t in tournaments %}
-            <div class="admin-card">
+            <div class="bg-secondary-dark rounded-2xl p-6 border border-white/5 card-hover transition-all">
                 <div class="flex justify-between items-start mb-4">
                     <div>
                         <h5 class="text-lg font-bold text-white">{{ t.name }}</h5>
@@ -181,9 +272,12 @@
                         {{ t.status|upper }}
                     </span>
                 </div>
-                <div class="flex gap-2 mt-4">
+                <div class="flex flex-wrap gap-2 mt-4">
                     <a href="{{ url_for('admin_tournament_detail', tournament_id=t.id) }}" class="flex-1 text-center px-3 py-2 bg-accent-blue/10 border border-accent-blue/30 text-accent-blue rounded-lg hover:bg-accent-blue/20 transition-colors text-sm font-semibold">
                         View
+                    </a>
+                    <a href="{{ url_for('brackets', tournament_id=t.id) }}" class="flex-1 text-center px-3 py-2 bg-purple-500/10 border border-purple-500/30 text-purple-400 rounded-lg hover:bg-purple-500/20 transition-colors text-sm font-semibold">
+                        Brackets
                     </a>
                     {% if t.status == 'active' %}
                     <form action="{{ url_for('complete_tournament', tournament_id=t.id) }}" method="POST" class="flex-1">
@@ -192,11 +286,13 @@
                         </button>
                     </form>
                     {% endif %}
-                    <form action="{{ url_for('delete_tournament', tournament_id=t.id) }}" method="POST" class="flex-1" onsubmit="return confirm('Delete this tournament and all its registrations?')">
+                    {% if session.get('admin') %}
+                    <form action="{{ url_for('delete_tournament', tournament_id=t.id) }}" method="POST" class="flex-1" onsubmit="return confirm('Delete this tournament and all its data?')">
                         <button type="submit" class="w-full px-3 py-2 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors text-sm font-semibold">
                             Delete
                         </button>
                     </form>
+                    {% endif %}
                 </div>
             </div>
             {% endfor %}

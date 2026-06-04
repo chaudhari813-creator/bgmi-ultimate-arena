@@ -115,7 +115,9 @@
                         <a href="{{ url_for('index') }}" class="hover:text-accent-blue transition-colors duration-300">Home</a>
                         <a href="{{ url_for('live_page') }}" class="hover:text-red-400 transition-colors duration-300 flex items-center gap-1"><span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>Live</a>
                         <a href="{{ url_for('check_status') }}" class="hover:text-accent-blue transition-colors duration-300">Check Status</a>
-                        {% if session.get('admin') %}
+                        <a href="{{ url_for('leaderboard') }}" class="hover:text-accent-gold transition-colors duration-300">Leaderboard</a>
+                        <a href="{{ url_for('gallery_page') }}" class="hover:text-accent-blue transition-colors duration-300">Gallery</a>
+                        {% if session.get('admin') or session.get('sub_admin') %}
                         <a href="{{ url_for('admin_dashboard') }}" class="hover:text-accent-gold transition-colors duration-300">Admin Panel</a>
                         <a href="{{ url_for('admin_logout') }}" class="text-red-400 hover:text-red-300 transition-colors duration-300">Logout</a>
                         {% endif %}
@@ -133,7 +135,9 @@
                 <a href="{{ url_for('index') }}" class="block py-2 hover:text-accent-blue">Home</a>
                 <a href="{{ url_for('live_page') }}" class="block py-2 hover:text-red-400">Live Matches</a>
                 <a href="{{ url_for('check_status') }}" class="block py-2 hover:text-accent-blue">Check Status</a>
-                {% if session.get('admin') %}
+                <a href="{{ url_for('leaderboard') }}" class="block py-2 hover:text-accent-gold">Leaderboard</a>
+                <a href="{{ url_for('gallery_page') }}" class="block py-2 hover:text-accent-blue">Gallery</a>
+                {% if session.get('admin') or session.get('sub_admin') %}
                 <a href="{{ url_for('admin_dashboard') }}" class="block py-2 hover:text-accent-gold">Admin Panel</a>
                 <a href="{{ url_for('admin_logout') }}" class="block py-2 text-red-400">Logout</a>
                 {% endif %}

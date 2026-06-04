@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}{{ team.team_name }} - Team Profile{% endblock %}
+
+{% block content %}
+<section class="py-24 bg-primary-dark min-h-screen">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Team Header -->
+        <div class="bg-gradient-to-br from-slate-gray to-secondary-dark rounded-[2rem] p-8 border border-white/10 mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="font-display text-3xl text-white mb-2">{{ team.team_name }}</h2>
+                    <p class="text-accent-blue">{{ tournament.name }}</p>
+                    <p class="text-gray-500 text-sm mt-1">Registered: {{ team.created_at }}</p>
+                </div>
+                <span class="status-badge status-{{ team.status }}">{{ team.status|capitalize }}</span>
+            </div>
+        </div>
+
+        <!-- Players -->
+        <div class="bg-secondary-dark rounded-2xl p-6 border border-white/5 mb-8">
+            <h4 class="text-lg font-bold text-white mb-4">Squad Members</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+                    <span class="w-8 h-8 bg-accent-gold/10 rounded-full flex items-center justify-center text-accent-gold text-xs font-bold">C</span>
+                    <div>
+                        <p class="text-white font-semibold">{{ team.player1 }}</p>
+                        <p class="text-gray-500 text-xs">Leader</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+                    <span class="w-8 h-8 bg-accent-blue/10 rounded-full flex items-center justify-center text-accent-blue text-xs font-bold">2</span>
+                    <div>
+                        <p class="text-white font-semibold">{{ team.player2 }}</p>
+                        <p class="text-gray-500 text-xs">Player</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+                    <span class="w-8 h-8 bg-accent-blue/10 rounded-full flex items-center justify-center text-accent-blue text-xs font-bold">3</span>
+                    <div>
+                        <p class="text-white font-semibold">{{ team.player3 }}</p>
+                        <p class="text-gray-500 text-xs">Player</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+                    <span class="w-8 h-8 bg-accent-blue/10 rounded-full flex items-center justify-center text-accent-blue text-xs font-bold">4</span>
+                    <div>
+                        <p class="text-white font-semibold">{{ team.player4 }}</p>
+                        <p class="text-gray-500 text-xs">Player</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        {% if lb_entry %}
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-secondary-dark p-4 rounded-xl border border-white/5 text-center">
+                <p class="text-gray-500 text-xs mb-1">Wins</p>
+                <p class="text-2xl font-bold text-green-400">{{ lb_entry.wins }}</p>
+            </div>
+            <div class="bg-secondary-dark p-4 rounded-xl border border-white/5 text-center">
+                <p class="text-gray-500 text-xs mb-1">Losses</p>
+                <p class="text-2xl font-bold text-red-400">{{ lb_entry.losses }}</p>
+            </div>
+            <div class="bg-secondary-dark p-4 rounded-xl border border-white/5 text-center">
+                <p class="text-gray-500 text-xs mb-1">Total Kills</p>
+                <p class="text-2xl font-bold text-white">{{ lb_entry.total_kills }}</p>
+            </div>
+            <div class="bg-secondary-dark p-4 rounded-xl border border-white/5 text-center">
+                <p class="text-gray-500 text-xs mb-1">Points</p>
+                <p class="text-2xl font-bold text-accent-gold">{{ lb_entry.points }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Match History -->
+        {% if matches %}
+        <div class="bg-secondary-dark rounded-2xl p-6 border border-white/5">
+            <h4 class="text-lg font-bold text-white mb-4">Match History</h4>
+            <div class="space-y-3">
+                {% for match in matches %}
+                <div class="flex justify-between items-center p-4 bg-black/30 rounded-xl border border-white/5">
+                    <div>
+                        <p class="text-white font-semibold">{{ match.team1_name }} vs {{ match.team2_name }}</p>
+                        <p class="text-gray-500 text-xs">{{ match.round_name }}</p>
+                    </div>
+                    <div class="text-right">
+                        {% if match.winner_id == team.id %}
+                        <span class="px-3 py-1 bg-green-500/10 text-green-400 rounded-full text-xs font-bold">WON</span>
+                        {% elif match.winner_id %}
+                        <span class="px-3 py-1 bg-red-500/10 text-red-400 rounded-full text-xs font-bold">LOST</span>
+                        {% else %}
+                        <span class="px-3 py-1 bg-yellow-500/10 text-yellow-400 rounded-full text-xs font-bold">PENDING</span>
+                        {% endif %}
+                        <p class="text-gray-500 text-xs mt-1">{{ match.team1_kills }} - {{ match.team2_kills }} kills</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Share -->
+        <div class="mt-8 text-center">
+            <a href="https://wa.me/?text=Check%20out%20team%20{{ team.team_name }}%20in%20{{ tournament.name }}!" target="_blank" class="inline-block px-6 py-3 bg-green-500/10 border border-green-500/30 text-green-400 rounded-xl hover:bg-green-500/20 transition-colors font-semibold">
+                Share Team on WhatsApp
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

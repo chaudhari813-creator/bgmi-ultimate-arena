@@ -11,7 +11,25 @@
                 <h3 class="font-display text-3xl text-white">{{ tournament.name }}</h3>
                 <p class="text-gray-500">{{ tournament.game_mode }} | Entry: ₹{{ tournament.entry_fee }} | Prize: ₹{{ tournament.prize_pool }}</p>
             </div>
+            <div class="flex gap-2">
+                <a href="{{ url_for('brackets', tournament_id=tournament.id) }}" class="px-4 py-2 bg-purple-500/10 border border-purple-500/30 text-purple-400 rounded-xl hover:bg-purple-500/20 text-sm font-semibold">
+                    View Brackets
+                </a>
+                <a href="{{ url_for('leaderboard') }}?tournament_id={{ tournament.id }}" class="px-4 py-2 bg-accent-gold/10 border border-accent-gold/30 text-accent-gold rounded-xl hover:bg-accent-gold/20 text-sm font-semibold">
+                    Leaderboard
+                </a>
+            </div>
         </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="mb-6 p-4 rounded-xl text-sm {% if category == 'error' %}bg-red-500/10 text-red-400 border border-red-500/20{% else %}bg-green-500/10 text-green-400 border border-green-500/20{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
 
         <!-- Stats -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -33,12 +51,137 @@
             </div>
         </div>
 
+        <!-- Bracket Generation -->
+        <div class="bg-secondary-dark rounded-2xl p-6 border border-purple-500/10 mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h4 class="text-lg font-bold text-white">Tournament Brackets</h4>
+                    <p class="text-gray-500 text-sm">Generate knockout brackets from approved teams</p>
+                </div>
+                <div class="flex gap-2">
+                    <form action="{{ url_for('generate_brackets', tournament_id=tournament.id) }}" method="POST" onsubmit="return confirm('This will reset all existing brackets. Continue?')">
+                        <button type="submit" class="px-4 py-2 bg-purple-500 text-white font-bold rounded-xl hover:scale-105 transition-all text-sm">
+                            Generate Brackets
+                        </button>
+                    </form>
+                    {% if matches %}
+                    <form action="{{ url_for('generate_next_round', tournament_id=tournament.id) }}" method="POST">
+                        <button type="submit" class="px-4 py-2 bg-accent-blue text-white font-bold rounded-xl hover:scale-105 transition-all text-sm">
+                            Next Round
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Match Results -->
+        {% if matches %}
+        <div class="bg-secondary-dark rounded-2xl p-6 border border-white/5 mb-8">
+            <h4 class="text-lg font-bold text-white mb-4">Match Results</h4>
+            <div class="space-y-4">
+                {% for match in matches %}
+                <div class="p-4 bg-black/30 rounded-xl border border-white/5">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-3">
+                        <div>
+                            <span class="text-xs text-accent-blue font-semibold">{{ match.round_name }} - Match {{ match.match_order }}</span>
+                            <p class="text-white font-semibold">{{ match.team1_name }} vs {{ match.team2_name }}</p>
+                        </div>
+                        {% if match.winner_id %}
+                        <span class="px-3 py-1 bg-green-500/10 text-green-400 rounded-full text-xs font-bold">Winner Set</span>
+                        {% endif %}
+                    </div>
+                    {% if not match.winner_id and match.team2_name != 'BYE' %}
+                    <form action="{{ url_for('set_match_result', match_id=match.id) }}" method="POST" class="flex flex-col md:flex-row gap-3 items-end">
+                        <div class="flex-1">
+                            <label class="text-xs text-gray-500">Winner</label>
+                            <select name="winner_id" class="w-full px-3 py-2 rounded-lg form-input text-sm" required>
+                                <option value="">Select Winner</option>
+                                <option value="{{ match.team1_id }}">{{ match.team1_name }}</option>
+                                {% if match.team2_id %}
+                                <option value="{{ match.team2_id }}">{{ match.team2_name }}</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">{{ match.team1_name }} Kills</label>
+                            <input type="number" name="team1_kills" value="0" min="0" class="w-full px-3 py-2 rounded-lg form-input text-sm">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">{{ match.team2_name }} Kills</label>
+                            <input type="number" name="team2_kills" value="0" min="0" class="w-full px-3 py-2 rounded-lg form-input text-sm">
+                        </div>
+                        <button type="submit" class="px-4 py-2 bg-green-500 text-white font-bold rounded-lg text-sm hover:scale-105 transition-all">Set Result</button>
+                    </form>
+                    {% elif match.winner_id %}
+                    <p class="text-sm text-gray-400">{{ match.team1_name }}: {{ match.team1_kills }} kills | {{ match.team2_name }}: {{ match.team2_kills }} kills</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Prize Distribution -->
+        <div class="bg-secondary-dark rounded-2xl p-6 border border-accent-gold/10 mb-8">
+            <h4 class="text-lg font-bold text-white mb-4">Prize Distribution</h4>
+            <form action="{{ url_for('add_prize', tournament_id=tournament.id) }}" method="POST" class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6">
+                <div>
+                    <label class="text-xs text-gray-500">Position</label>
+                    <input type="number" name="position" placeholder="1" min="1" class="w-full px-3 py-2 rounded-lg form-input text-sm" required>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500">Team Name</label>
+                    <input type="text" name="team_name" placeholder="Winner team" class="w-full px-3 py-2 rounded-lg form-input text-sm" required>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500">Prize Amount (₹)</label>
+                    <input type="text" name="prize_amount" placeholder="500" class="w-full px-3 py-2 rounded-lg form-input text-sm" required>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500">Winner UPI</label>
+                    <input type="text" name="upi_id" placeholder="winner@upi" class="w-full px-3 py-2 rounded-lg form-input text-sm">
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="px-4 py-2 bg-accent-gold text-black font-bold rounded-lg text-sm hover:scale-105 transition-all">Add Prize</button>
+                </div>
+            </form>
+            {% if prizes %}
+            <div class="space-y-3">
+                {% for prize in prizes %}
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 p-4 bg-black/30 rounded-xl border border-white/5">
+                    <div class="flex items-center gap-3">
+                        <span class="w-8 h-8 bg-accent-gold/10 rounded-full flex items-center justify-center text-accent-gold font-bold text-sm">#{{ prize.position }}</span>
+                        <div>
+                            <p class="text-white font-semibold">{{ prize.team_name }}</p>
+                            <p class="text-accent-gold text-sm font-bold">₹{{ prize.prize_amount }}</p>
+                            {% if prize.upi_id %}<p class="text-gray-500 text-xs">UPI: {{ prize.upi_id }}</p>{% endif %}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        {% if prize.status == 'paid' %}
+                        <span class="px-3 py-1 bg-green-500/10 text-green-400 rounded-full text-xs font-bold">PAID {{ prize.paid_at }}</span>
+                        {% else %}
+                        <form action="{{ url_for('mark_prize_paid', prize_id=prize.id) }}" method="POST">
+                            <button type="submit" class="px-3 py-1 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg hover:bg-green-500/20 text-xs font-semibold">Mark Paid</button>
+                        </form>
+                        {% endif %}
+                        <form action="{{ url_for('delete_prize', prize_id=prize.id) }}" method="POST" onsubmit="return confirm('Remove this prize?')">
+                            <button type="submit" class="px-3 py-1 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/20 text-xs font-semibold">Delete</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
         <!-- Registrations -->
         <h4 class="text-xl font-bold text-white mb-6">Registrations</h4>
         {% if registrations %}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {% for reg in registrations %}
-            <div class="admin-card">
+            <div class="bg-secondary-dark rounded-2xl p-6 border border-white/5">
                 <div class="flex justify-between items-start mb-4">
                     <div>
                         <h5 class="text-lg font-bold text-white">{{ reg.team_name }}</h5>
@@ -57,7 +200,7 @@
                 {% if reg.payment_screenshot %}
                 <div class="mb-4">
                     <p class="text-xs text-gray-500 mb-2">Payment Proof:</p>
-                    <img src="{{ url_for('static', filename='uploads/' + reg.payment_screenshot) }}" alt="Payment Screenshot" class="image-preview" onclick="openModal(this.src)">
+                    <img src="{{ url_for('static', filename='uploads/' + reg.payment_screenshot) }}" alt="Payment Screenshot" class="w-full h-32 object-cover rounded-xl cursor-pointer border border-white/10 hover:border-accent-blue/50 transition-colors" onclick="openModal(this.src)">
                 </div>
                 {% endif %}
 
@@ -73,6 +216,7 @@
                     <form action="{{ url_for('reset_registration', reg_id=reg.id) }}" method="POST" class="flex-1">
                         <button type="submit" class="w-full px-3 py-2 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 rounded-lg hover:bg-yellow-500/20 transition-colors text-sm font-semibold">Reset to Pending</button>
                     </form>
+                    <a href="{{ url_for('team_profile', team_id=reg.id) }}" class="flex-1 text-center px-3 py-2 bg-accent-blue/10 border border-accent-blue/30 text-accent-blue rounded-lg hover:bg-accent-blue/20 transition-colors text-sm font-semibold">Profile</a>
                     {% endif %}
                 </div>
             </div>
@@ -90,7 +234,7 @@
 <div id="imageModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80" onclick="closeModal()">
     <div class="max-w-4xl max-h-[90vh] p-4" onclick="event.stopPropagation()">
         <img id="modalImg" src="" alt="Full Screenshot" class="max-w-full max-h-[85vh] rounded-xl border border-white/10">
-        <button onclick="closeModal()" class="absolute top-4 right-4 text-white text-3xl hover:text-red-400">&times;</button>
+        <button onclick="closeModal()" class="absolute top-4 right-4 text-white text-3xl hover:text-red-400 bg-black/50 w-10 h-10 rounded-full flex items-center justify-center">&times;</button>
     </div>
 </div>
 {% endblock %}
